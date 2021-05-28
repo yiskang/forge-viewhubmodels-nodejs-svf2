@@ -22,8 +22,8 @@ var viewer;
 // @viewablesId which viewables to show, applies to BIM 360 Plans folder
 function launchViewer(urn, viewableId) {
   var options = {
-    env: 'FluentProduction' + (atob(urn.replace('urn:', '').replace('_', '/')).indexOf('emea') > -1 ? 'EU' : ''),
-    api: 'fluent',
+    env: 'MD20Prod' + (atob(urn.replace('urn:', '').replace('_', '/')).indexOf('emea') > -1 ? 'EU' : 'US'),
+    api: 'D3S',
     getAccessToken: getForgeToken
   };
 
@@ -37,8 +37,14 @@ function launchViewer(urn, viewableId) {
   function onDocumentLoadSuccess(doc) {
     // if a viewableId was specified, load that view, otherwise the default view
     var viewables = (viewableId ? doc.getRoot().findByGuid(viewableId) : doc.getRoot().getDefaultGeometry());
-    viewer.loadDocumentNode(doc, viewables).then(i => {
+    viewer.loadDocumentNode(doc, viewables).then(model => {
       // any additional action here?
+
+      console.log({
+        'is SVF2?': model.isSVF2(),
+        'is OTG?': model.isOTG(),
+        'LMV version': LMV_VIEWER_VERSION
+      });
     });
   }
 
