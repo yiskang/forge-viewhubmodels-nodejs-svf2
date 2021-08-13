@@ -27,6 +27,11 @@ function launchViewer(urn, viewableId) {
     getAccessToken: getForgeToken
   };
 
+  if (LMV_VIEWER_VERSION >= '7.48') {
+    options.env = 'AutodeskProduction2';
+    options.api = 'streamingV2' + (atob(urn.replace('urn:', '').replace('_', '/')).indexOf('emea') > -1 ? '_EU' : '');
+  }
+
   Autodesk.Viewing.Initializer(options, () => {
     viewer = new Autodesk.Viewing.GuiViewer3D(document.getElementById('forgeViewer'));
     viewer.start();
@@ -36,8 +41,8 @@ function launchViewer(urn, viewableId) {
 
   function onDocumentLoadSuccess(doc) {
     // if a viewableId was specified, load that view, otherwise the default view
-    var viewables = (viewableId ? doc.getRoot().findByGuid(viewableId) : doc.getRoot().getDefaultGeometry());
-    viewer.loadDocumentNode(doc, viewables).then(model => {
+    var viewables = (viewableId ? doc.getRoot().findByGuid(viewableId).getDefaultGeometry() : doc.getRoot().getDefaultGeometry());
+    viewer.loadDocumentNode(doc, viewables, { skipHiddenFragments: false }).then(model => {
       // any additional action here?
 
       console.log({
