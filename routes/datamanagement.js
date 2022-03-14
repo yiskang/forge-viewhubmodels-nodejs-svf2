@@ -62,6 +62,30 @@ router.get('/datamanagement', async (req, res) => {
     }
 });
 
+router.get('/datamanagement/projects/:projectId/folders/:folderId/parent', async (req, res, next) => {
+    try {
+        // Get the access token
+        const oauth = new OAuth(req.session);
+        const internalToken = await oauth.getInternalToken();
+
+        getFolderParent(req.params.projectId, req.params.folderId, oauth.getClient(), internalToken, res);
+    } catch (err) {
+        next(err);
+    }
+});
+
+router.get('/datamanagement/projects/:projectId/items/:itemId/parent', async (req, res, next) => {
+    try {
+        // Get the access token
+        const oauth = new OAuth(req.session);
+        const internalToken = await oauth.getInternalToken();
+
+        getItemFolderParent(req.params.projectId, req.params.itemId, oauth.getClient(), internalToken, res);
+    } catch (err) {
+        next(err);
+    }
+});
+
 async function getHubs(oauthClient, credentials, res) {
     const hubs = new HubsApi();
     const data = await hubs.getHubs({}, oauthClient, credentials);
@@ -127,7 +151,7 @@ async function getFolderContents(projectId, folderId, oauthClient, credentials, 
     const contents = await folders.getFolderContents(projectId, folderId, {}, oauthClient, credentials);
     const treeNodes = contents.body.data.map((item) => {
         var name = (item.attributes.name == null ? item.attributes.displayName : item.attributes.name);
-        if (name !== '') { 
+        if (name !== '') {
             return createTreeNode(
                 item.links.self.href,
                 name,
@@ -139,6 +163,36 @@ async function getFolderContents(projectId, folderId, oauthClient, credentials, 
         }
     });
     res.json(treeNodes.filter(node => node !== null));
+}
+
+async function getFolderParent(projectId, folderId, oauthClient, credentials, res) {
+    try {
+        const folders = new FoldersApi();
+        const contents = await folders.getFolderParent(projectId, folderId, oauthClient, credentials);
+        const parentFolder = contents.body.data;
+        const node = createTreeNode(
+            parentFolder.links.self.href,
+            (parentFolder.attributes.name == null ? parentFolder.attributes.displayName : parentFolder.attributes.name),
+            parentFolder.type,
+            true
+        );
+        res.json(node);
+    } catch(ex) {
+        res.status(500).json(ex);
+    }
+}
+
+async function getItemFolderParent(projectId, itemId, oauthClient, credentials, res) {
+    const items = new ItemsApi();
+    const contents = await items.getItemParentFolder(projectId, itemId, oauthClient, credentials);
+    const parentFolder = contents.body.data;
+    const node = createTreeNode(
+        parentFolder.links.self.href,
+        (parentFolder.attributes.name == null ? parentFolder.attributes.displayName : parentFolder.attributes.name),
+        parentFolder.type,
+        true
+    );
+    res.json(node);
 }
 
 async function getVersions(projectId, itemId, oauthClient, credentials, res) {
@@ -280,4 +334,3 @@ function createTreeNode(_id, _text, _type, _children) {
 }
 
 module.exports = router;
-

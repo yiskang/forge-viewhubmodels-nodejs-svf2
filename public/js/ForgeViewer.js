@@ -41,8 +41,17 @@ function launchViewer(urn, viewableId) {
 
   function onDocumentLoadSuccess(doc) {
     // if a viewableId was specified, load that view, otherwise the default view
-    var viewables = (viewableId ? doc.getRoot().findByGuid(viewableId).getDefaultGeometry() : doc.getRoot().getDefaultGeometry());
-    viewer.loadDocumentNode(doc, viewables, { skipHiddenFragments: false }).then(model => {
+    const root = doc.getRoot();
+    const viewables = root.search({ 'type': 'geometry', 'role': '3d' });
+
+    console.log('Viewables:', viewables);
+
+    const phaseViews = viewables.filter(v => v.data.name === v.data.phaseNames && v.getViewableRootPath().includes('08f99ae5-b8be-4f8d-881b-128675723c10'));
+
+    console.log('Master Views:', phaseViews);
+
+
+    viewer.loadDocumentNode(doc, phaseViews[0], { skipHiddenFragments: false }).then(model => {
       // any additional action here?
 
       console.log({

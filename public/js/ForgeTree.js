@@ -98,7 +98,8 @@ function prepareUserHubsTree() {
       else if (a1.type !== b1.type) return a1.icon < b1.icon ? 1 : -1; // types are different inside folder, so sort by icon (files/folders)
       else return a1.text > b1.text ? 1 : -1; // basic name/text sort
     },
-    "plugins": ["types", "state", "sort"],
+    "plugins": ["types", "state", "sort", "contextmenu"],
+    contextmenu: { items: autodeskCustomMenu },
     "state": { "key": "autodeskHubs" }// key restore tree state
   }).bind("activate_node.jstree", function (evt, data) {
     if (data != null && data.node != null && (data.node.type == 'versions' || data.node.type == 'bim360documents' || data.node.type == 'views')) {
@@ -113,6 +114,44 @@ function prepareUserHubsTree() {
       }
     }
   });
+}
+
+async function autodeskCustomMenu(autodeskNode, buildContextMenu) {
+  let idParams = autodeskNode.id.split('/');
+  let url = '';
+  let projectId = '';
+
+  switch (autodeskNode.type) {
+    case "folders":
+      projectId = idParams[idParams.length - 3];
+      let folderId = idParams[idParams.length - 1];
+      url = `/api/forge/datamanagement/projects/${projectId}/folders/${folderId}/parent`;
+      break;
+    case "items":
+      projectId = idParams[idParams.length - 3];
+      let itemId = idParams[idParams.length - 1];
+      url = `/api/forge/datamanagement/projects/${projectId}/items/${itemId}/parent`;
+      break;
+  }
+
+  if (!projectId) return;
+
+  let items = {
+    getParentInfo: {
+      label: 'Get parent info',
+      action: function () {
+        jQuery.ajax({
+          url,
+          success: function (data) {
+            alert(JSON.stringify(data));
+          }
+        })
+      },
+      icon: 'glyphicon glyphicon-dashboard'
+    }
+  };
+
+  buildContextMenu(items);
 }
 
 function showUser() {
